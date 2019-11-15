@@ -1,24 +1,24 @@
-# Copyright 1999-2018 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
+EAPI=7
 
 PYTHON_COMPAT=( python2_7 )
 inherit eutils user systemd unpacker pax-utils python-single-r1
 
-HASH_VERSION="0f4abfbcc"
+MINOR_VERSION="2029-36236cc4c"
 
 _APPNAME="plexmediaserver"
 _USERNAME="plex"
 _SHORTNAME="${_USERNAME}"
-_FULL_VERSION="${PV}-${HASH_VERSION}"
+_FULL_VERSION="${PV}.${MINOR_VERSION}"
 
 URI="https://downloads.plex.tv/plex-media-server-new"
 
 DESCRIPTION="A free media library that is intended for use with a plex client."
 HOMEPAGE="https://www.plex.tv/"
 SRC_URI="amd64? ( ${URI}/${_FULL_VERSION}/debian/plexmediaserver_${_FULL_VERSION}_amd64.deb )"
-SLOT="plexpass"
+SLOT="0"
 LICENSE="Plex"
 RESTRICT="bindist strip"
 KEYWORDS="-* ~amd64"
@@ -32,16 +32,6 @@ RDEPEND="
 	net-dns/avahi
 	${PYTHON_DEPS}"
 
-if [ ${SLOT} = "plexpass" ]; then
-        RDEPEND="${RDEPEND}
-                !media-tv/plex-media-server:public
-        "
-elif [ ${SLOT} = "public" ]; then
-        RDEPEND="${RDEPEND}
-                !media-tv/plex-media-server:plexpass
-        "
-fi
-
 QA_DESKTOP_FILE="usr/share/applications/plexmediamanager.desktop"
 QA_PREBUILT="*"
 QA_MULTILIB_PATHS=(
@@ -49,8 +39,8 @@ QA_MULTILIB_PATHS=(
 	"usr/lib/${_APPNAME}/Resources/Python/lib/python2.7/.*"
 )
 
-EXECSTACKED_BINS=( "${ED%/}/usr/lib/plexmediaserver/libgnsdk_dsp.so*" )
-BINS_TO_PAX_MARK=( "${ED%/}/usr/lib/plexmediaserver/Plex Script Host" )
+EXECSTACKED_BINS=( "${ED}/usr/lib/plexmediaserver/libgnsdk_dsp.so*" )
+BINS_TO_PAX_MARK=( "${ED}/usr/lib/plexmediaserver/Plex Script Host" )
 
 S="${WORKDIR}"
 PATCHES=( "${FILESDIR}/virtualenv_start_pms.patch" )
@@ -78,18 +68,18 @@ src_install() {
 	rm -rf "usr/share/doc" || die
 
 	# Copy main files over to image and preserve permissions so it is portable
-	cp -rp usr/ "${ED}" || die
+	cp -rp usr/ "${ED}"/ || die
 
 	# Make sure the logging directory is created
 	local LOGGING_DIR="/var/log/pms"
 	dodir "${LOGGING_DIR}"
-	chown "${_USERNAME}":"${_USERNAME}" "${ED%/}/${LOGGING_DIR}" || die
+	chown "${_USERNAME}":"${_USERNAME}" "${ED}/${LOGGING_DIR}" || die
 	keepdir "${LOGGING_DIR}"
 
 	# Create default library folder with correct permissions
 	local DEFAULT_LIBRARY_DIR="/var/lib/${_APPNAME}"
 	dodir "${DEFAULT_LIBRARY_DIR}"
-	chown "${_USERNAME}":"${_USERNAME}" "${ED%/}/${DEFAULT_LIBRARY_DIR}" || die
+	chown "${_USERNAME}":"${_USERNAME}" "${ED}/${DEFAULT_LIBRARY_DIR}" || die
 	keepdir "${DEFAULT_LIBRARY_DIR}"
 
 	# Install the OpenRC init/conf files
@@ -112,8 +102,8 @@ src_install() {
 	_add_pax_markings
 
 	einfo "Configuring virtualenv"
-	virtualenv -v --no-pip --no-setuptools --no-wheel "${ED}"usr/lib/plexmediaserver/Resources/Python || die
-	pushd "${ED}"usr/lib/plexmediaserver/Resources/Python &>/dev/null || die
+	virtualenv -v --no-pip --no-setuptools --no-wheel "${ED}"/usr/lib/plexmediaserver/Resources/Python || die
+	pushd "${ED}"/usr/lib/plexmediaserver/Resources/Python &>/dev/null || die
 	find . -type f -exec sed -i -e "s#${D}##g" {} + || die
 	popd &>/dev/null || die
 }
